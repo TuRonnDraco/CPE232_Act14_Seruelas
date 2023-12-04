@@ -1,5 +1,5 @@
 [Controller]
-Ubuntu
+server1
 [Compute]
-CentOS
+centos
 

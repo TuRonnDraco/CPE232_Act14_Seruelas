@@ -4,7 +4,7 @@
        name:  glance
 
   -  name: Configuration of Glance
-     templates:
+     template:
        src: roles/Controller_Glance/glance-api.conf.j2
        dest:  /etc/glance/glance-api.conf
 

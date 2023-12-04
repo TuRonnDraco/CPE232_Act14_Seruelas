@@ -8,7 +8,7 @@
          - nova-scheduler
 
   -  name:  Configuration of Nova
-     templates:
+     template:
        src:  roles/Controller_Nova/templates/nova.conf.j2
        dest:  /etc/nova/nova.conf
 
