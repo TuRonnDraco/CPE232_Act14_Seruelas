@@ -1,0 +1,113 @@
+
+  - name: Installing Nova & Prerequisites
+    apt:
+      name:
+        - nova-api
+        - nova-conductor
+        - nova-novncproxy
+        - nova-scheduler
+      state: latest
+
+  - name: Configuring Nova API Access
+    lineinfile:
+      dest: /etc/nova/nova.conf
+      regexp: connection = mysql+pymysql://nova:NOVA_DBPASS@controller/nova_api
+      line: connection = mysql+pymysql://nova:nova_admin123@controller/nova_api
+
+  - name: Configure Nova Authentication Strategy
+    lineinfile:
+      dest: /etc/nova/nova.conf
+      insertafter: '\[api\]'
+      line: 'auth_strategy = keystone'
+      state: present
+
+  - name: Configuring Nova Database
+    lineinfile:
+      dest: /etc/nova/nova.conf
+      regexp: mysql+pymysql://nova:NOVA_DBPASS@controller/nova
+      line: mysql+pymysql://nova:nova_admin123@controller/nova
+
+  - name: Configure Nova Authentication Token (for Keystone)
+    lineinfile:
+      dest: /etc/glance/glance-api.conf
+      insertafter: '\[keystone_authtoken\]'
+      line: "{{ item }}"
+      state: present
+    with_items:
+      - www_authenticate_uri = http://controller:5000/
+      - auth_url = http://controller:5000/
+      - memcached_servers = controller:11211
+      - auth_type = password
+      - project_domain_name = Default
+      - user_domain_name = Default
+      - project_name = service
+      - username = nova
+      - password = nova_admin123
+
+  - name: Configure Nova VNC configuration
+    lineinfile:
+      dest: /etc/glance/glance-api.conf
+      insertafter: '\[vnc\]'
+      line: "{{ item }}"
+      state: present
+    with_items:
+      - enabled = true
+      - server_listen = $my_ip
+      - server_proxyclient_address = $my_ip
+
+  - name: Configure Nova placement configuration
+    lineinfile:
+      dest: /etc/glance/glance-api.conf
+      insertafter: '\[placement\]'
+      line: "{{ item }}"
+      state: present
+    with_items:
+      - region_name = RegionOne
+      - project_domain_name = Default
+      - project_name = service
+      - auth_type = password
+      - user_domain_name = Default
+      - auth_url = http://controller:5000/v3
+      - username = placement
+      - password = placement_admin123
+
+  - name: Configure DEFAULT configuration
+    lineinfile:
+      dest: /etc/nova/nova.conf
+      line: 'my_ip = 10.0.0.11'
+      state: present
+
+  - name: Configure Nova Glance
+    lineinfile:
+      dest: /etc/nova/nova.conf
+      line: 'api_server = http://controller:9292'
+      state: present
+
+  - name: Configure Nova olso_concurrency
+    lineinfile:
+      dest: /etc/nova/nova.conf
+      line: 'lock_path = /var/lib/nova/tmp'
+      state: present
+
+  - name: Population of Nova-API Database
+    shell: sudo nova-manage api_db sync
+
+  - name: Registration of cell0 Database
+    shell: sudo nova-manage cell_v2 map_cell0
+
+  - name: Repopulating Nova-API Database
+    shell: sudo nova-manage db sync
+
+  - name: Verification of Nova-API
+    shell: sudo nova-manage cell_v2 list_cells
+
+  - name: Restart Nova Services
+    systemd:
+      name: "{{ item }}"
+      state: restarted
+      enabled: true
+    loop:
+      - nova-api
+      - nova-scheduler
+      - nova-conductor
+      - nova-novncproxy

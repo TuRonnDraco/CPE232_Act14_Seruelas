@@ -1,0 +1,39 @@
+
+  -  name: Install Keystone & Prerequisites
+     apt:
+       name:
+         -  keystone
+         -  apache2
+         -  libapache2-mod-wsgi-py3
+
+  -  name: Configuring Keystone
+     lineinfile:
+       dest: /etc/keystone/keystone.conf
+       insertafter: '\[database\]'
+       regexp: 'connection = mysql+pymysql://keystone:KEYSTONE_DBPASS@controller/keystone'
+       line: 'connection = mysql+pymysql://keystone:keystone_admin123@controller/keystone'
+
+  -  name:  Populating the Keystone Database
+     command:  sudo keystone-manage db_sync
+
+  -  name:  Initialization of Fernet Key to Keystone
+     shell:  |
+       keystone-manage fernet_setup --keystone-user keystone --keystone-group keystone
+       keystone-manage credential_setup --keystone-user keystone --keystone-group keystone
+
+  -  name:  Configuring the Apache for Keystone Functionality
+     lineinfile:
+       dest: /etc/apache2/apache2.conf
+       line: 'ServerName controller'
+       state: present
+       backup: yes
+
+  -  name:  Configuration of Environmental Variables for an Administrative Account
+     shell: |
+       export OS_USERNAME=admin
+       export OS_PASSWORD=ADMIN_PASS
+       export OS_PROJECT_NAME=admin
+       export OS_USER_DOMANI_NAME=Default
+       export OS_PROJECT_DOMAIN_NAME=Default
+       export OS_AUTH_URL=http://controller:5000/v3
+       export OS_IDENTITY_API_VERSION=3

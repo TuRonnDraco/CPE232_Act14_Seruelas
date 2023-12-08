@@ -1,0 +1,75 @@
+
+  -  name:  Installation of Glance
+     apt:
+       name: glance
+
+  -  name:  Configuring Glance's Connection
+     replace:
+       dest:  /etc/glance/glance-api.conf
+       regexp:  connection = mysql+pymysql://glance:GLANCE_DBPASS@controller/glance
+       replace:  connection = mysql+pymysql://glance:admin123@controller/glance
+
+  -  name:  Configuring Glance's Authentication Token
+     lineinfile:
+       dest:  /etc/glance/glance-api.conf
+       insertafter:  '\[keystone_authtoken\]'
+       line:  "{{ item }}"
+       state:  present
+     with_items:
+       -  www_authenticate_uri = http://controller:5000
+       -  auth_url = http://controller:5000
+       -  memcached_servers = controller:11211
+       -  auth_type = password
+       -  project_domain_name = Default
+       -  user_domain_name = Default
+       -  project_name = service
+       -  username = glance
+       -  password = glance_admin123
+
+  -  name:  Configuring Glance Flavor in paste_deploy
+     lineinfile:
+       dest:  /etc/glance/glance-api.conf
+       insertafter:  '\[paste_deploy\]'
+       line:  'flavor = keystone'
+
+  -  name:  Configure Glance glance_store
+     lineinfile:
+       dest:  /etc/glance/glance-api.conf
+       insertafter:  '\[glance_store\]'
+       line:  "{{ item }}"
+       state: present
+     with_items:
+       -  stores = file,http
+       -  default_store = file
+       -  filesystem_store_datadir = /var/lib/glance/images/
+
+  -  name:  Configure Glance oslo_limit
+     lineinfile:
+       dest:  /etc/glance/glance-api.conf
+       insertafter:  '\[oslo_limit\]'
+       line:  "{{ item }}"
+       state:  present
+     with_items:
+       -  auth_url = http://controller:5000
+       -  auth_type = password
+       -  user_domain_id = default
+       -  username = MY_SERVICE
+      -  system_scope = all
+      -  password = MY_PASSWORD
+      -  endpoint_id = ENDPOINT_ID
+      -  region_name = RegionOne
+
+   -  name:  Configure Glance DEFAULT
+      lineinfile:
+        dest:  /etc/glance/glance-api.conf
+        insertafter:  '\[DEFAULT\]'
+        line:  'use_keystone_limits = True'
+
+   -  name:  Populating Image Service Database
+      command:  sudo glance-manage db_sync
+
+   -  name:  Restart Glance Service
+      systemd:
+        name:  glance-api
+        state: restarted
+        enabled: true
