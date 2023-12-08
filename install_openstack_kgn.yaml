@@ -9,24 +9,10 @@
           update_cache: yes
         when: ansible_distribution == "Ubuntu"
 
-#     -  name: Install Updates (CentOS)
-#        yum:
-#          update_only: yes
-#          update_cache: yes
-#        when: ansible_distribution == "CentOS"
-
 -  hosts:  Controller
    become:  true
    roles:
-     -  Controller_Keystone
-     -  Controller_Glance
-     -  Controller_Nova
-
-#-  hosts:  Compute
-#   become: true
-#   roles:
-#     -  Compute_Keystone
-#     -  Compute_Glance
-#     -  Compute_Nova
-
+     -  Keystone
+     -  Glance
+     -  Nova
 
