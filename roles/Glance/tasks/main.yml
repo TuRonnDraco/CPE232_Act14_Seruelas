@@ -54,22 +54,22 @@
        -  auth_type = password
        -  user_domain_id = default
        -  username = MY_SERVICE
-      -  system_scope = all
-      -  password = MY_PASSWORD
-      -  endpoint_id = ENDPOINT_ID
-      -  region_name = RegionOne
+       -  system_scope = all
+       -  password = MY_PASSWORD
+       -  endpoint_id = ENDPOINT_ID
+       -  region_name = RegionOne
 
-   -  name:  Configure Glance DEFAULT
-      lineinfile:
-        dest:  /etc/glance/glance-api.conf
-        insertafter:  '\[DEFAULT\]'
-        line:  'use_keystone_limits = True'
+  -  name:  Configure Glance DEFAULT
+     lineinfile:
+       dest:  /etc/glance/glance-api.conf
+       insertafter:  '\[DEFAULT\]'
+       line:  'use_keystone_limits = True'
 
-   -  name:  Populating Image Service Database
-      command:  sudo glance-manage db_sync
+  -  name:  Populating Image Service Database
+     command:  sudo glance-manage db_sync
 
-   -  name:  Restart Glance Service
-      systemd:
-        name:  glance-api
-        state: restarted
-        enabled: true
+  -  name:  Restart Glance Service
+     systemd:
+       name:  glance-api
+       state: restarted
+       enabled: true
